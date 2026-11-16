@@ -1,5 +1,4 @@
-@'
-fastapi
+﻿fastapi
 uvicorn[standard]
 sqlalchemy[asyncio]
 aiosqlite
@@ -8,4 +7,3 @@ pydantic
 pydantic-settings
 httpx
 greenlet
-'@ | Set-Content backend/requirements.txt -Encoding UTF8
