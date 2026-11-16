@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  @apply bg-background text-text font-body overflow-x-hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+      radial-gradient(circle at 20% 20%, rgba(124,92,252,.20), transparent 25%),
+      radial-gradient(circle at 80% 80%, rgba(34,211,238,.15), transparent 25%);
+  z-index:-2;
+}
+
+::selection{
+  @apply bg-primary text-white;
+}
