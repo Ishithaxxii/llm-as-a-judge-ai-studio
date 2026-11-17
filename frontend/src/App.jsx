@@ -3,7 +3,7 @@ import CosmicBackground from "./CosmicBackground";
 
 export default function App() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-text">
+    <main className="relative min-h-screen overflow-x-hidden bg-background text-text">
       <CosmicBackground />
       <Landing />
     </main>

@@ -7,25 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#060816",
-        surface: "#101828",
-        card: "#161B2E",
+        background: "#080910",
+        midnight: "#080910",
+        surface: "#121024",
+        card: "#141229",
+        violetDeep: "#32126F",
+        steel: "#3B5780",
 
-        primary: "#7C5CFC",
-        secondary: "#3B82F6",
-        accent: "#22D3EE",
+        primary: "#702CFF",
+        secondary: "#54D9FF",
+        accent: "#E344C5",
+        warm: "#FF815D",
 
         success: "#22C55E",
-        warning: "#F59E0B",
-        danger: "#EF4444",
+        warning: "#FF815D",
+        danger: "#E344C5",
 
-        text: "#F8FAFC",
-        muted: "#94A3B8",
+        text: "#F5F1F0",
+        muted: "#A6ADBF",
       },
 
       fontFamily: {
-        heading: ["Space Grotesk", "sans-serif"],
-        body: ["Inter", "sans-serif"],
+        heading: ["Bricolage Grotesque", "sans-serif"],
+        body: ["Plus Jakarta Sans", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
 
@@ -34,13 +38,13 @@ export default {
       },
 
       boxShadow: {
-        glass: "0 10px 40px rgba(0,0,0,0.35)",
-        glow: "0 0 40px rgba(124,92,252,.35)",
+        glass: "0 18px 48px rgba(8, 9, 16, 0.72)",
+        glow: "0 0 48px rgba(112, 44, 255, 0.28)",
       },
 
       backgroundImage: {
         hero:
-          "radial-gradient(circle at top left,#3d2a9a 0%,transparent 35%), radial-gradient(circle at bottom right,#006eff 0%,transparent 35%)",
+          "radial-gradient(circle at 75% 30%, rgba(112, 44, 255, 0.28) 0%, transparent 48%), radial-gradient(circle at 20% 80%, rgba(227, 68, 197, 0.18) 0%, transparent 45%)",
       },
 
       keyframes: {

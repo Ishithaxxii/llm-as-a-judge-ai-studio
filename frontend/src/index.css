@@ -1,27 +1,94 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html{
-  scroll-behavior:smooth;
+html {
+  scroll-behavior: smooth;
+  background-color: #080910;
 }
 
-body{
-  @apply bg-background text-text font-body overflow-x-hidden;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:
-      radial-gradient(circle at 20% 20%, rgba(124,92,252,.20), transparent 25%),
-      radial-gradient(circle at 80% 80%, rgba(34,211,238,.15), transparent 25%);
-  z-index:-2;
+body {
+  @apply bg-background text-text font-body overflow-x-hidden antialiased;
+  background-color: #080910;
+  color: #f5f1f0;
 }
 
-::selection{
-  @apply bg-primary text-white;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 60% 40%,
+    rgba(50, 18, 111, 0.22) 0%,
+    rgba(8, 9, 16, 0.96) 75%
+  );
+  z-index: -2;
+}
+
+::selection {
+  background-color: rgba(112, 44, 255, 0.38);
+  color: #f5f1f0;
+}
+
+@keyframes liquidChromeShift {
+  0%,
+  100% {
+    background-position: 35% 20%;
+  }
+  50% {
+    background-position: 65% 80%;
+  }
+}
+
+.liquid-chrome-surface {
+  background-image: linear-gradient(
+    172deg,
+    #ffffff 0%,
+    #dfe8f7 14%,
+    #7f8cab 28%,
+    #1c113d 45%,
+    #5221a8 54%,
+    #c86be0 67%,
+    #d6e6f7 80%,
+    #ff9878 90%,
+    #f5f1f0 100%
+  );
+  background-size: 165% 165%;
+  background-position: 35% 20%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0.45px rgba(245, 241, 240, 0.42);
+  animation: liquidChromeShift 16s ease-in-out infinite;
+}
+
+.liquid-chrome-surface--subtle {
+  background-image: linear-gradient(
+    168deg,
+    #f5f1f0 0%,
+    #cad8ee 24%,
+    #2d1a5e 48%,
+    #702cff 66%,
+    #e344c5 82%,
+    #f5f1f0 100%
+  );
+  background-size: 140% 140%;
+  background-position: 40% 30%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0.3px rgba(245, 241, 240, 0.26);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-chrome-surface {
+    animation: none;
+  }
 }
