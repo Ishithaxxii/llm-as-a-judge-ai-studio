@@ -5,6 +5,7 @@ import IntelligenceEngine from "./IntelligenceEngine";
 import EvaluationWorkspace from "./EvaluationWorkspace";
 import SixDimensions from "./SixDimensions";
 import FinalVerdict from "./FinalVerdict";
+import Footer from "./Footer";
 
 function scrollToSection(sectionId) {
   const el = document.getElementById(sectionId);
@@ -105,7 +106,11 @@ export default function Landing() {
         evaluation={evaluation}
         status={status}
         onReset={handleReset}
+        onRetryJudge={handleRetryJudge}
       />
+
+      <Footer />
+
     </>
   );
 }

@@ -50,7 +50,9 @@ export default function FinalVerdict({
   evaluation = null,
   status = "idle",
   onReset = null,
+  onRetryJudge = null,
 }) {
+
   const shouldReduceMotion = useReducedMotion();
 
   const hasEvaluation = Boolean(
@@ -58,6 +60,12 @@ export default function FinalVerdict({
       Array.isArray(evaluation.results) &&
       evaluation.results.length > 0
   );
+
+  const failedJudges = Array.isArray(evaluation?.failed_judges)
+    ? evaluation.failed_judges
+    : [];
+
+  const isRetrying = status === "evaluating" && hasEvaluation;
 
   const aggregateScore = hasEvaluation
     ? formatScore(evaluation.aggregate_score)
@@ -386,6 +394,53 @@ export default function FinalVerdict({
                 </div>
               ) : null}
             </div>
+
+            {/* Partial Provider Failure & Retry */}
+            {hasEvaluation && failedJudges.length > 0 ? (
+              <div
+                role="alert"
+                className="mt-8 rounded-2xl border border-[#FF815D]/40 bg-[#32126F]/30 p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <span className="font-mono text-xs tracking-[0.16em] text-[#FF815D]">
+                      PARTIAL EVALUATION · {failedJudges.length} FAILED{" "}
+                      {failedJudges.length === 1 ? "JUDGE" : "JUDGES"}
+                    </span>
+
+                    <p className="mt-2 font-body text-sm leading-relaxed text-[#F5F1F0]/85">
+                      Some judges could not complete their evaluation. The
+                      aggregate score uses successful judge results only.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onRetryJudge}
+                    disabled={!onRetryJudge || isRetrying}
+                    className="shrink-0 rounded-full border border-[#54D9FF]/50 px-4 py-2 font-mono text-xs text-[#54D9FF] transition hover:bg-[#54D9FF] hover:text-[#080910] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54D9FF] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isRetrying ? "Retrying failed judge(s)..." : "Retry Failed Judge(s)"}
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {failedJudges.map((judge) => (
+                    <div
+                      key={judge.model_name}
+                      className="rounded-xl border border-[#FF815D]/20 bg-[#080910]/65 px-4 py-3"
+                    >
+                      <p className="font-mono text-xs text-[#FF815D]">
+                        {judge.model_name}
+                      </p>
+                      <p className="mt-1 font-body text-sm text-[#F5F1F0]/80">
+                        {judge.error || "No error details returned."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {/* INDIVIDUAL JUDGE ASSESSMENTS & REASONING */}
             {hasEvaluation ? (

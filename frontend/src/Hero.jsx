@@ -68,21 +68,18 @@ export default function Hero() {
           </motion.div>
 
           {/* Headline */}
+
+          {/* Headline */}
           <h1
             id="hero-heading"
-            className="font-heading text-[clamp(3rem,5.8vw,5.5rem)] font-bold leading-[0.98] tracking-[-0.03em] text-[#F5F1F0] [text-wrap:balance]"
+            className="font-heading text-[clamp(3rem,5.8vw,5.5rem)] font-bold leading-[0.98] tracking-[-0.03em] [text-wrap:balance]"
           >
-            <span className="block drop-shadow-[0_10px_32px_rgba(8,9,16,0.65)]">
-              AI judges.
-            </span>
-            <span className="mt-1.5 block">
-              <span className="drop-shadow-[0_10px_32px_rgba(8,9,16,0.65)]">
-                One trusted{" "}
-              </span>
-              <LiquidChromeText variant="hero" className="tracking-[-0.02em]">
-                verdict.
-              </LiquidChromeText>
-            </span>
+            <LiquidChromeText
+              variant="hero"
+              className="block tracking-[-0.03em]"
+            >
+              LLM AS A JUDGE
+            </LiquidChromeText>
           </h1>
 
           {/* Supporting Copy */}
