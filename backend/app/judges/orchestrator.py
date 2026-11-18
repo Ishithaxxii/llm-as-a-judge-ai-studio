@@ -1,11 +1,17 @@
-import asyncio, json, time
+
+import asyncio
+import json
+import time
+import random
+
 from dataclasses import dataclass
-from statistics import mean, pstdev
+
 import httpx
+
 from app.config import get_settings
 from app.judges.prompts import build_scoring_prompt
-import random
 from app.judges.metrics import compute_metrics
+
 
 settings = get_settings()
 
@@ -50,6 +56,7 @@ class JudgeOutcome:
     latency_ms: int
     error: str | None = None
 
+
 async def _call_groq(client, model, prompt, api_key):
     resp = await client.post(
         "https://api.groq.com/openai/v1/chat/completions",
@@ -62,8 +69,13 @@ async def _call_groq(client, model, prompt, api_key):
         },
         timeout=settings.judge_timeout_seconds,
     )
+
     resp.raise_for_status()
-    return json.loads(resp.json()["choices"][0]["message"]["content"])
+
+    return json.loads(
+        resp.json()["choices"][0]["message"]["content"]
+    )
+
 
 async def _call_gemini(client, model, prompt, api_key):
     resp = await client.post(
@@ -78,41 +90,82 @@ async def _call_gemini(client, model, prompt, api_key):
         },
         timeout=settings.judge_timeout_seconds,
     )
+
     resp.raise_for_status()
+
     text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+
     return json.loads(text)
 
+
 async def _mock_judge(model_name: str, prompt: str) -> JudgeOutcome:
-    """Simulates a judge response instantly, no network call, no API cost.
-    Used for testing the request/response flow, aggregation, and caching
-    logic in isolation from the actual LLM providers."""
-    await asyncio.sleep(0.3)  # simulate a bit of latency so loading states are visible
+    """
+    Simulates a judge response instantly, without network calls or API costs.
+    Used for testing evaluation flow and aggregation logic.
+    """
+
+    await asyncio.sleep(0.3)
+
     score = round(random.uniform(5.0, 9.5), 1)
+
     return JudgeOutcome(
         model_name=model_name,
         score=score,
-        reasoning=f"[MOCK] This is a simulated evaluation from {model_name}, standing in for a real API call during testing.",
+        reasoning=(
+            f"[MOCK] This is a simulated evaluation from {model_name}, "
+            "standing in for a real API call during testing."
+        ),
         criterion_scores={"overall_quality": score},
         confidence=round(random.uniform(0.6, 0.95), 2),
         latency_ms=300,
     )
 
+
 async def _run_single_judge(client, model_name, prompt):
     provider, _, model = model_name.partition(":")
-    api_key = {"groq": settings.groq_api_key, "gemini": settings.gemini_api_key}.get(provider)
+
+    if provider not in ("groq", "gemini"):
+        return JudgeOutcome(
+            model_name,
+            0,
+            "",
+            {},
+            None,
+            0,
+            error=f"unknown provider {provider}",
+        )
+
+    api_key = {
+        "groq": settings.groq_api_key,
+        "gemini": settings.gemini_api_key,
+    }[provider]
+
     if not api_key:
-        return JudgeOutcome(model_name, 0, "", {}, None, 0, error=f"no API key for {provider}")
+        return JudgeOutcome(
+            model_name,
+            0,
+            "",
+            {},
+            None,
+            0,
+            error=f"no API key for {provider}",
+        )
 
     start = time.monotonic()
+
     try:
         if provider == "groq":
-            parsed = await _call_groq(client, model, prompt, api_key)
+            parsed = await _call_groq(
+                client, model, prompt, api_key
+            )
+
         elif provider == "gemini":
-            parsed = await _call_gemini(client, model, prompt, api_key)
-        else:
-            return JudgeOutcome(model_name, 0, "", {}, None, 0, error=f"unknown provider {provider}")
+            parsed = await _call_gemini(
+                client, model, prompt, api_key
+            )
 
         latency_ms = int((time.monotonic() - start) * 1000)
+
         return JudgeOutcome(
             model_name=model_name,
             score=float(parsed["overall_score"]),
@@ -124,6 +177,7 @@ async def _run_single_judge(client, model_name, prompt):
             confidence=parsed.get("confidence"),
             latency_ms=latency_ms,
         )
+
     except Exception as exc:
         return JudgeOutcome(
             model_name,
@@ -135,13 +189,6 @@ async def _run_single_judge(client, model_name, prompt):
             error=_safe_provider_error(exc),
         )
 
-# async def run_judges(content, content_type, criteria, judges):
-#     judges = judges[: settings.max_judges_per_request]
-#     prompt = build_scoring_prompt(content, content_type, criteria)
-#     async with httpx.AsyncClient() as client:
-#         return await asyncio.gather(*[_run_single_judge(client, j, prompt) for j in judges])
-
-# TEST RUN_JUDGES
 async def run_judges(
     content,
     content_type,
@@ -151,7 +198,7 @@ async def run_judges(
     reference_answer=None,
     tool_trace=None,
 ):
-    judges = judges[: settings.max_judges_per_request]
+    judges = judges[:settings.max_judges_per_request]
 
     prompt = build_scoring_prompt(
         content=content,
@@ -174,7 +221,8 @@ async def run_judges(
                 for j in judges
             ]
         )
-    
+
+
 def aggregate(
     outcomes,
     historical_scores: list[float] | None = None,
