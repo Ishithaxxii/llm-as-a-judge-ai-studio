@@ -147,7 +147,12 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
     ]
 
     # --- Historical scores for Z-score (simple global for now) ---
-    hist_query = await db.execute(select(JudgeResult.score).limit(200))
+    hist_query = await db.execute(
+        select(JudgeResult.score)
+        .where(JudgeResult.submission_id != submission.id)
+        .order_by(JudgeResult.created_at.desc(), JudgeResult.id.desc())
+        .limit(200)
+    )
     historical_scores = [row[0] for row in hist_query.all()]
 
     agg = aggregate(
