@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,17 +33,6 @@ async def create_submission(payload: SubmissionCreate, db: AsyncSession = Depend
     await db.commit()
     await db.refresh(submission)
     return submission
-
-
-@router.get("", response_model=list[SubmissionOut])
-async def list_submissions(
-    limit: int = Query(default=30, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Submission).order_by(Submission.created_at.desc()).limit(limit)
-    )
-    return result.scalars().all()
 
 
 @router.get("/{submission_id}/evaluation", response_model=JudgeResponse)
