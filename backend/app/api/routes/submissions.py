@@ -43,7 +43,9 @@ async def get_saved_evaluation(submission_id: str, db: AsyncSession = Depends(ge
         raise HTTPException(404, "Submission not found")
 
     result = await db.execute(
-        select(JudgeResult).where(JudgeResult.submission_id == submission_id)
+        select(JudgeResult)
+        .where(JudgeResult.submission_id == submission_id)
+        .order_by(JudgeResult.created_at.asc(), JudgeResult.id.asc())
     )
     saved_results = result.scalars().all()
     if not saved_results:
@@ -56,8 +58,14 @@ async def get_saved_evaluation(submission_id: str, db: AsyncSession = Depends(ge
             criteria = rubric.criteria
     criterion_weights = {item["name"]: item["weight"] for item in criteria}
 
-    history_result = await db.execute(select(JudgeResult.score).limit(200))
+    history_result = await db.execute(
+        select(JudgeResult.score)
+        .where(JudgeResult.submission_id != submission.id)
+        .order_by(JudgeResult.created_at.desc(), JudgeResult.id.desc())
+        .limit(200)
+    )
     historical_scores = [row[0] for row in history_result.all()]
+
     outcomes = [
         JudgeOutcome(
             item.model_name,

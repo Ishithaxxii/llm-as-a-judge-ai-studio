@@ -22,7 +22,10 @@ export default function EvaluationWorkspace({
 }) {
 
 const shouldReduceMotion = useReducedMotion();
-const isBusy = status === "submitting" || status === "evaluating";
+const isBusy =
+  status === "submitting" ||
+  status === "evaluating" ||
+  status === "loading-history";
 
 const successfulJudges = Array.isArray(evaluation?.results)
   ? evaluation.results
@@ -148,7 +151,9 @@ const successfulJudges = Array.isArray(evaluation?.results)
                         ? "Independent judges deliberating"
                         : status === "success"
                           ? "Evaluation complete"
-                          : "Request failed"}
+                          : status === "loading-history"
+                            ? "Restoring saved evaluation"
+                            : "Request failed"}
                 </span>
               </span>
 
