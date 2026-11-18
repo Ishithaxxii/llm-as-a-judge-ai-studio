@@ -9,6 +9,37 @@ from app.judges.metrics import compute_metrics
 
 settings = get_settings()
 
+def _safe_provider_error(exc: Exception) -> str:
+    """Return useful provider diagnostics without exposing raw response details."""
+
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+
+        if status in (401, 403):
+            return f"Provider authentication failed (HTTP {status})."
+        if status == 429:
+            return "Provider rate limit reached (HTTP 429)."
+        if status >= 500:
+            return f"Provider service unavailable (HTTP {status})."
+        return f"Provider rejected the request (HTTP {status})."
+
+    if isinstance(exc, httpx.TimeoutException):
+        return "Provider request timed out."
+
+    if isinstance(exc, httpx.RequestError):
+        return "Network error while contacting the provider."
+
+    if isinstance(exc, json.JSONDecodeError):
+        return "Provider returned invalid JSON."
+
+    if isinstance(exc, KeyError):
+        return "Provider response was missing an expected field."
+
+    if isinstance(exc, (ValueError, TypeError, IndexError)):
+        return "Provider returned an invalid response format or score."
+
+    return "Unexpected provider error. Check backend logs for details."
+
 @dataclass
 class JudgeOutcome:
     model_name: str
@@ -36,10 +67,14 @@ async def _call_groq(client, model, prompt, api_key):
 
 async def _call_gemini(client, model, prompt, api_key):
     resp = await client.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        headers={"x-goog-api-key": api_key},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"},
+            "generationConfig": {
+                "temperature": 0.0,
+                "responseMimeType": "application/json",
+            },
         },
         timeout=settings.judge_timeout_seconds,
     )
@@ -89,8 +124,16 @@ async def _run_single_judge(client, model_name, prompt):
             confidence=parsed.get("confidence"),
             latency_ms=latency_ms,
         )
-    except (httpx.HTTPError, KeyError, ValueError, json.JSONDecodeError) as exc:
-        return JudgeOutcome(model_name, 0, "", {}, None, int((time.monotonic() - start) * 1000), error=str(exc))
+    except Exception as exc:
+        return JudgeOutcome(
+            model_name,
+            0,
+            "",
+            {},
+            None,
+            int((time.monotonic() - start) * 1000),
+            error=_safe_provider_error(exc),
+        )
 
 # async def run_judges(content, content_type, criteria, judges):
 #     judges = judges[: settings.max_judges_per_request]

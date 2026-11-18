@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Criterion(BaseModel):
     name: str
@@ -49,15 +49,20 @@ class JudgeResultOut(BaseModel):
     latency_ms: int | None
     model_config = {"from_attributes": True}
 
+class FailedJudgeOut(BaseModel):
+    model_name: str
+    error: str
+
 class JudgeResponse(BaseModel):
     submission_id: str
     results: list[JudgeResultOut]
+    failed_judges: list[FailedJudgeOut] = Field(default_factory=list)
     aggregate_score: float
-    agreement: float
     flagged_disagreement: bool = False
     # New metrics
-    jaccard: float = 0.0
-    cosine: float = 0.0
+    agreement: float | None = None
+    jaccard: float | None = None
+    cosine: float | None = None
     z_score: float | None = None
     score_std: float = 0.0
     num_valid_judges: int = 0

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     default_judges: list[str] = [
         "groq:openai/gpt-oss-20b",
-        "gemini:gemini-3.5-flash",
+        "gemini:gemini-flash-lite-latest",
     ]
     max_judges_per_request: int = 4
     judge_timeout_seconds: int = 30

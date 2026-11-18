@@ -15,8 +15,17 @@ export default function EvaluationWorkspace({
   onRetryJudge,
   onReset,
 }) {
-  const shouldReduceMotion = useReducedMotion();
-  const isBusy = status === "submitting" || status === "evaluating";
+
+const shouldReduceMotion = useReducedMotion();
+const isBusy = status === "submitting" || status === "evaluating";
+
+const failedJudges = Array.isArray(evaluation?.failed_judges)
+  ? evaluation.failed_judges
+  : [];
+
+const successfulJudges = Array.isArray(evaluation?.results)
+  ? evaluation.results
+  : [];
 
   return (
     <section
@@ -232,9 +241,7 @@ export default function EvaluationWorkspace({
                 <p className="mt-1 font-body text-sm text-[#F5F1F0]/85">
                   Returned models:{" "}
                   <span className="font-mono text-xs text-[#F5F1F0]">
-                    {(evaluation.results || [])
-                      .map((r) => r.model_name)
-                      .join(" · ") || "None"}
+                    {successfulJudges.map((r) => r.model_name).join(" · ") || "None"}
                   </span>
                 </p>
               </div>
@@ -245,6 +252,49 @@ export default function EvaluationWorkspace({
               >
                 Jump to Verdict ↓
               </a>
+            </div>
+          ) : null}
+          {/* Partial Provider Failure Warning */}
+          {status === "success" && failedJudges.length > 0 ? (
+            <div
+              role="alert"
+              className="mb-7 rounded-2xl border border-[#FF815D]/40 bg-[#32126F]/30 p-5"
+            >
+              <span className="font-mono text-xs tracking-[0.16em] text-[#FF815D]">
+                PARTIAL EVALUATION · {failedJudges.length} FAILED{" "}
+                {failedJudges.length === 1 ? "JUDGE" : "JUDGES"}
+              </span>
+
+              <p className="mt-2 font-body text-sm leading-relaxed text-[#F5F1F0]/85">
+                Some judges could not complete their evaluation. The aggregate score
+                uses successful judge results only.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {failedJudges.map((judge) => (
+                  <div
+                    key={judge.model_name}
+                    className="rounded-xl border border-[#FF815D]/20 bg-[#080910]/65 px-4 py-3"
+                  >
+                    <p className="font-mono text-xs text-[#FF815D]">
+                      {judge.model_name}
+                    </p>
+                    <p className="mt-1 font-body text-sm text-[#F5F1F0]/80">
+                      {judge.error || "No error details returned."}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {submissionId && onRetryJudge ? (
+                <button
+                  type="button"
+                  onClick={onRetryJudge}
+                  className="mt-4 rounded-full border border-[#54D9FF]/50 px-4 py-2 font-mono text-xs text-[#54D9FF] transition hover:bg-[#54D9FF] hover:text-[#080910]"
+                >
+                  Retry Failed Judge(s)
+                </button>
+              ) : null}
             </div>
           ) : null}
 

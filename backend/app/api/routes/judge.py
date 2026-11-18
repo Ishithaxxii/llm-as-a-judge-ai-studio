@@ -57,14 +57,16 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
             "scale": 10,
         },
     ]
-    criterion_weights = {
-        c["name"]: c["weight"]
-        for c in criteria
-    }
     if submission.rubric_id:
         rubric = await db.get(Rubric, submission.rubric_id)
         if rubric:
             criteria = rubric.criteria
+
+    # Always calculate weights from the active rubric.
+    criterion_weights = {
+        c["name"]: c["weight"]
+        for c in criteria
+    }
 
     judges = payload.judges or settings.default_judges
 
@@ -79,6 +81,8 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
     to_run = [j for j in judges if j not in cached]
 
     new_results = []
+    failed_judges = []
+
     if to_run:
         outcomes = await run_judges(
             content=submission.content,
@@ -91,20 +95,25 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
         )
         for o in outcomes:
             if o.error:
+                failed_judges.append({
+                    "model_name": o.model_name,
+                    "error": o.error,
+                })
                 continue
+            weighted_score = calculate_weighted_score(
+                o.criterion_scores,
+                criterion_weights,
+                fallback_score=o.score,
+            )
+
             rec = JudgeResult(
                 submission_id=submission.id,
                 model_name=o.model_name,
-                score=o.score,
+                score=weighted_score,
                 reasoning=o.reasoning,
                 criterion_scores=o.criterion_scores,
                 confidence=o.confidence,
                 latency_ms=o.latency_ms,
-            )
-            o.score = calculate_weighted_score(
-                o.criterion_scores,
-                criterion_weights,
-                fallback_score=o.score,
             )
             db.add(rec)
             new_results.append(rec)
@@ -113,8 +122,16 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
             await db.refresh(r)
 
     all_results = list(cached.values()) + new_results
+
     if not all_results:
-        raise HTTPException(502, "All judges failed — check API keys")
+        failure_summary = "; ".join(
+            f"{item['model_name']}: {item['error']}"
+            for item in failed_judges
+        )
+        raise HTTPException(
+            502,
+            f"All judges failed. {failure_summary or 'Check provider configuration.'}"
+        )
 
     # Build outcomes for metrics
     outcomes_for_metrics = [
@@ -138,7 +155,7 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
         historical_scores,
         criterion_weights,
     )
-    
+
     return JudgeResponse(
         submission_id=submission.id,
         results=[JudgeResultOut.model_validate(r) for r in all_results],
@@ -150,4 +167,5 @@ async def judge_submission(payload: JudgeRequest, db: AsyncSession = Depends(get
         z_score=agg["z_score"],
         score_std=agg["score_std"],
         num_valid_judges=agg["num_valid_judges"],
+        failed_judges=failed_judges,
     )

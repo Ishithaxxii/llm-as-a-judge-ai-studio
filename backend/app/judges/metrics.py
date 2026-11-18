@@ -145,8 +145,11 @@ def compute_metrics(
     avg = mean(scores)
     std = pstdev(scores) if len(scores) > 1 else 0.0
 
-    cv = (std / avg) if avg else 0.0
-    agreement = max(0.0, min(1.0, 1 - cv))
+    if len(valid) >= 2:
+        cv = (std / avg) if avg else 0.0
+        agreement = max(0.0, min(1.0, 1 - cv))
+    else:
+        agreement = None
 
     jaccards, cosines = [], []
 
@@ -166,15 +169,15 @@ def compute_metrics(
                 )
             )
 
-    avg_jaccard = round(mean(jaccards), 4) if jaccards else 1.0
-    avg_cosine = round(mean(cosines), 4) if cosines else 1.0
+    avg_jaccard = round(mean(jaccards), 4) if jaccards else None
+    avg_cosine = round(mean(cosines), 4) if cosines else None
 
     z = z_score(avg, historical_scores or [])
 
     return {
         "aggregate_score": round(avg, 2),
-        "agreement": round(agreement, 3),
-        "flagged_disagreement": agreement < 0.70,
+        "agreement": round(agreement, 3) if agreement is not None else None,
+        "flagged_disagreement": agreement is not None and agreement < 0.70,
         "jaccard": avg_jaccard,
         "cosine": avg_cosine,
         "z_score": z,
