@@ -14,6 +14,11 @@ export default function EvaluationWorkspace({
   onSubmitted,
   onRetryJudge,
   onReset,
+  history = [],
+  historyLoading = false,
+  historyError = null,
+  onRefreshHistory,
+  onSelectHistory,
 }) {
 
 const shouldReduceMotion = useReducedMotion();
@@ -42,7 +47,7 @@ const successfulJudges = Array.isArray(evaluation?.results)
         }}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 sm:px-10">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 sm:px-10">
         {/* Workspace Header */}
         <motion.header
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
@@ -107,6 +112,28 @@ const successfulJudges = Array.isArray(evaluation?.results)
             }}
           />
 
+          <div className="grid gap-7 lg:grid-cols-[250px_minmax(0,1fr)]">
+            <aside className="h-fit rounded-2xl border border-[#54D9FF]/20 bg-[#080910]/65 p-4 lg:sticky lg:top-8">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <div><span className="font-mono text-[10px] tracking-[0.2em] text-[#54D9FF]">YOUR RUNS</span><h3 className="mt-1 font-heading text-lg font-semibold text-[#F5F1F0]">History</h3></div>
+                <button type="button" onClick={onRefreshHistory} disabled={historyLoading} className="rounded-full border border-[#F5F1F0]/15 px-2.5 py-1.5 font-mono text-[10px] text-[#A6ADBF] transition hover:border-[#54D9FF]/50 hover:text-[#54D9FF] disabled:opacity-50">{historyLoading ? "Loading…" : "Refresh"}</button>
+              </div>
+              {historyError ? <p role="alert" className="mb-3 text-xs leading-relaxed text-[#FF815D]">{historyError}</p> : null}
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                {history.length === 0 && !historyLoading ? <p className="rounded-xl border border-dashed border-[#F5F1F0]/15 px-3 py-5 text-center font-body text-xs leading-relaxed text-[#A6ADBF]">Your completed evaluations will appear here.</p> : null}
+                {history.map((item) => {
+                  const active = item.id === submissionId;
+                  const preview = (item.query || item.content || "Untitled evaluation").replace(/\s+/g, " ").trim();
+                  return <button key={item.id} type="button" onClick={() => onSelectHistory?.(item)} disabled={isBusy} className={active ? "block w-full rounded-xl border border-[#54D9FF]/60 bg-[#32126F]/35 px-3 py-3 text-left transition" : "block w-full rounded-xl border border-[#F5F1F0]/10 bg-[#101120]/65 px-3 py-3 text-left transition hover:border-[#54D9FF]/35 hover:bg-[#17172a]"}>
+                    <span className="block font-mono text-[10px] text-[#54D9FF]">{item.created_at ? new Date(item.created_at).toLocaleString() : "Saved submission"}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#F5F1F0]/85">{preview.length > 76 ? preview.slice(0, 76) + "…" : preview}</span>
+                    <span className="mt-2 block font-mono text-[9px] text-[#A6ADBF]">{item.content_type || "text"} · {item.id.slice(0, 8)}</span>
+                  </button>;
+                })}
+              </div>
+              <p className="mt-4 border-t border-[#F5F1F0]/10 pt-3 font-body text-[10px] leading-relaxed text-[#A6ADBF]">Selecting a saved run loads stored results only. No judge API calls are made.</p>
+            </aside>
+            <div className="min-w-0">
           {/* Status & Submission ID Header Bar */}
           <div className="mb-7 flex flex-wrap items-center justify-between gap-3 border-b border-[#F5F1F0]/10 pb-5 font-mono text-xs">
             <div className="flex flex-wrap items-center gap-3">
@@ -251,12 +278,10 @@ const successfulJudges = Array.isArray(evaluation?.results)
             </div>
           ) : null}
 
-          <Submission
-            key={resetKey}
-            onSubmitted={onSubmitted}
-            disabled={isBusy}
-            status={status}
-          />
+          {status === "loading-history" ? <div role="status" className="mb-5 rounded-xl border border-[#54D9FF]/25 bg-[#121024]/70 px-4 py-3 font-mono text-xs text-[#54D9FF]">RESTORING SAVED EVALUATION · NO LLM CALLS</div> : null}
+          <Submission key={resetKey} onSubmitted={onSubmitted} disabled={isBusy || status === "loading-history"} status={status} />
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>
