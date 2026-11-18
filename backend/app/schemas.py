@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 class Criterion(BaseModel):
@@ -33,6 +34,7 @@ class SubmissionOut(BaseModel):
     tool_trace: list[dict] | None = None
     content_type: str
     rubric_id: str | None
+    created_at: datetime | None = None
     model_config = {"from_attributes": True}
 
 
@@ -59,7 +61,6 @@ class JudgeResponse(BaseModel):
     failed_judges: list[FailedJudgeOut] = Field(default_factory=list)
     aggregate_score: float
     flagged_disagreement: bool = False
-    # New metrics
     agreement: float | None = None
     jaccard: float | None = None
     cosine: float | None = None
