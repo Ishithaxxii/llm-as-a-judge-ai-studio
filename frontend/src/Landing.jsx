@@ -31,10 +31,15 @@ export default function Landing() {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const items = await api.listSubmissions(30);
-      setHistory(Array.isArray(items) ? items : []);
+      const ids = JSON.parse(window.localStorage.getItem("llmaj.history.v1") || "[]");
+      const records = await Promise.all(
+        ids.slice(0, 30).map(async (id) => {
+          try { return await api.getSubmission(id); } catch { return null; }
+        })
+      );
+      setHistory(records.filter(Boolean));
     } catch (err) {
-      setHistoryError(err?.message || "Could not load recent evaluations.");
+      setHistoryError(err?.message || "Could not load this browser's history.");
     } finally {
       setHistoryLoading(false);
     }
@@ -67,6 +72,9 @@ export default function Landing() {
       const created = await api.createSubmission(payload);
       if (!created?.id) throw new Error("Submission endpoint did not return a submission ID.");
       setSubmissionId(created.id);
+      const previousIds = JSON.parse(window.localStorage.getItem("llmaj.history.v1") || "[]");
+      window.localStorage.setItem("llmaj.history.v1", JSON.stringify([created.id, ...previousIds.filter((id) => id !== created.id)].slice(0, 30)));
+      await refreshHistory();
       await runJudgeForSubmission(created.id);
     } catch (err) {
       setError(err?.message || "Failed to evaluate submission.");
