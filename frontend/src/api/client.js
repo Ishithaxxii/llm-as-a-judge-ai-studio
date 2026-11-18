@@ -37,7 +37,7 @@ async function request(path, options = {}) {
 
 export const api = {
   createSubmission: (data) => request("/submissions", { method: "POST", body: JSON.stringify(data) }),
-  listSubmissions: (limit = 30) => request(`/submissions?limit=${limit}`),
+  getSubmission: (id) => request(`/submissions/${encodeURIComponent(id)}`),
   getSavedEvaluation: (id) => request(`/submissions/${encodeURIComponent(id)}/evaluation`),
   judge: (data) => request("/judge", { method: "POST", body: JSON.stringify(data) }),
 };
